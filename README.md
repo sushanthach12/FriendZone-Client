@@ -1,9 +1,9 @@
 
-## FriendZone
+# FriendZone
 FriendZone is realtime chat application for texting with your peers and friends in realtime.
 FriendZone is build using Nextjs 14.
 
-# Getting Started
+## Getting Started
 Add the necessary environment variables:
 
 ```bash
