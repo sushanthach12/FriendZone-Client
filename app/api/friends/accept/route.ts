@@ -31,19 +31,26 @@ export const POST = async (req: Request, res: Response) => {
             return new Response('No friend Request', { status: 400 })
         }
 
+        const [userRaw, friendRaw] = (await Promise.all([
+            fetchRedis('get', `user:${session.user.id}`),
+            fetchRedis('get', `user:${idToAdd}`),
+        ])) as [string, string]
+
+        const user = JSON.parse(userRaw) as User
+        const friend = JSON.parse(friendRaw) as User
+
         // add or make both the users as friends
-        await db.sadd(`user:${session.user.id}:friends`, idToAdd)  // add the incoming user to current user friend
-         
-        await db.sadd(`user:${idToAdd}:friends`, session.user.id)  // add the current user friend to incoming user
 
-        // delete the incoming friends request
-        await db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd)
-
+        await Promise.all([
+            db.sadd(`user:${user.id}:friends`, friend.id),  // add the incoming user to current user friend
+            db.sadd(`user:${friend.id}:friends`, user.id),  // add the current user friend to incoming user
+            db.srem(`user:${user.id}:incoming_friend_requests`, friend.id) // delete the incoming friends request
+        ])
 
         return new Response('OK')
     } catch (error) {
-        if(error instanceof z.ZodError) {
-            return new Response('Invalid Request payload', { status: 422})
+        if (error instanceof z.ZodError) {
+            return new Response('Invalid Request payload', { status: 422 })
         }
 
         return new Response('Invalid Request', { status: 400 })
